@@ -11,6 +11,8 @@ Mini HTTP service that takes a JSON with server information and check
 | PORT       | optional (default 80)  | Port used for the application                                                                 |
 | SMTP_CN | optional (default hostname)| Common Name to use for client certificate when doing a STARTTLS                                                                |
 | SMTP_FROM | optional (default local@hostname)| Email to use to do the MAIL FROM smtp command                                                               |
+| SMTP_FROM_SPOOF | optional (default spoof@amazon.com)| Email to check for SPF checks (spoofing this email as MAIL FROM)                                              |
+| SMTP_TIMEOUT | optional (30 seconds)| How long to wait for the SMTP server to answer|
 
 ## Data
 ```json

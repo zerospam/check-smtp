@@ -11,6 +11,7 @@ const (
 	MailFrom
 	Data
 	Quit
+	SpfFail
 )
 
 func (op Operation) String() string {
@@ -22,9 +23,10 @@ func (op Operation) String() string {
 		"RCPT_TO",
 		"MAIL_FROM",
 		"DATA",
-		"QUIT"}
+		"QUIT",
+		"SPF_FAIL"}
 
-	if op < Timeout || op > Quit {
+	if op < Timeout || op > SpfFail {
 		return "Unknown"
 	}
 

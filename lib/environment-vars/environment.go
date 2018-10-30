@@ -14,6 +14,7 @@ type Env struct {
 	SmtpCN          string
 	SmtpMailFrom    *mail.Address
 	SmtpTimeout     time.Duration
+	SmtpMailSpoof   *mail.Address
 }
 
 var instance *Env
@@ -43,6 +44,18 @@ func GetVars() *Env {
 			panic(err)
 		}
 
+		var emailSpoof *mail.Address
+		emailFromSpoof := os.Getenv("SMTP_FROM_SPOOF")
+
+		if emailFromSpoof == "" {
+			emailFromSpoof = "spoof@amazon.com"
+		}
+
+		emailSpoof, err = mail.ParseAddress(emailFrom)
+		if err != nil {
+			panic(err)
+		}
+
 		port := os.Getenv("PORT")
 		if port == "" {
 			port = "80"
@@ -63,6 +76,7 @@ func GetVars() *Env {
 			SmtpCN:          commonName,
 			SmtpMailFrom:    emailFromAddress,
 			SmtpTimeout:     timeoutParsed,
+			SmtpMailSpoof:   emailSpoof,
 		}
 	})
 	return instance

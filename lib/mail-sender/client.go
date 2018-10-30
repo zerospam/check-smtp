@@ -47,7 +47,6 @@ func (c *Client) getClientTLSConfig(commonName string) *tls.Config {
 //Try to send the test email
 func (c *Client) SendTestEmail(email test_email.TestEmail) *lib.SmtpError {
 
-	defer c.Client.Quit()
 	defer c.Client.Close()
 
 	var err error
@@ -97,6 +96,43 @@ func (c *Client) SendTestEmail(email test_email.TestEmail) *lib.SmtpError {
 
 	if err = c.Client.Quit(); err != nil {
 		return lib.NewSmtpError(Quit, err)
+	}
+
+	return nil
+}
+
+//Try to send the test email
+func (c *Client) SpoofingTest() *lib.SmtpError {
+
+	defer c.Client.Quit()
+	defer c.Client.Close()
+
+	var err error
+
+	if err = c.Client.Hello(environmentvars.GetVars().SmtpCN); err != nil {
+		return lib.NewSmtpError(Ehlo, err)
+	}
+
+	if tlsSupport, _ := c.Client.Extension("StartTls"); tlsSupport {
+		tlsConfig := c.getClientTLSConfig(environmentvars.GetVars().SmtpCN)
+		tlsConfig.ServerName = c.server.Server
+		tlsConfig.MinVersion = tls.VersionTLS11
+		err = c.Client.StartTLS(tlsConfig)
+		if err != nil {
+			log.Printf("Couldn't start TLS transaction: %s", err)
+			return lib.NewSmtpError(StartTls, err)
+		}
+		state, _ := c.Client.TLSConnectionState()
+		tlsVersion := tlsgenerator.TlsVersion(state)
+		log.Printf("[%s] TLS: %s", c.server.Server, tlsVersion)
+	}
+
+	if err = c.Client.Mail(environmentvars.GetVars().SmtpMailFrom.Address); err != nil {
+		return lib.NewSmtpError(SpfFail, err)
+	}
+
+	if err = c.Client.Rcpt(c.server.TestEmail); err != nil {
+		return lib.NewSmtpError(SpfFail, err)
 	}
 
 	return nil
