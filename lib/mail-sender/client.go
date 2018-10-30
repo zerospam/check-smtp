@@ -21,13 +21,13 @@ type Client struct {
 func NewClient(server lib.TransportServer, localName string, timeout time.Duration) (*Client, *lib.SmtpError) {
 	conn, err := server.Connect(timeout)
 	if err != nil {
-		return nil, lib.NewSmtpError(TIMEOUT, err)
+		return nil, lib.NewSmtpError(Timeout, err)
 	}
 
 	client, err := smtp.NewClient(conn, server.Server)
 
 	if err != nil {
-		return nil, lib.NewSmtpError(CONN, err)
+		return nil, lib.NewSmtpError(Connection, err)
 	}
 	return &Client{
 		Client:    client,
@@ -53,17 +53,17 @@ func (c *Client) SendTestEmail(email test_email.TestEmail) *lib.SmtpError {
 	var err error
 
 	if err = c.Client.Hello(environmentvars.GetVars().SmtpCN); err != nil {
-		return lib.NewSmtpError(EHLO, err)
+		return lib.NewSmtpError(Ehlo, err)
 	}
 
-	if tlsSupport, _ := c.Client.Extension("STARTTLS"); tlsSupport {
+	if tlsSupport, _ := c.Client.Extension("StartTls"); tlsSupport {
 		tlsConfig := c.getClientTLSConfig(environmentvars.GetVars().SmtpCN)
 		tlsConfig.ServerName = c.server.Server
 		tlsConfig.MinVersion = tls.VersionTLS11
 		err = c.Client.StartTLS(tlsConfig)
 		if err != nil {
 			log.Printf("Couldn't start TLS transaction: %s", err)
-			return lib.NewSmtpError(STARTTLS, err)
+			return lib.NewSmtpError(StartTls, err)
 		}
 		state, _ := c.Client.TLSConnectionState()
 		tlsVersion := tlsgenerator.TlsVersion(state)
@@ -71,32 +71,32 @@ func (c *Client) SendTestEmail(email test_email.TestEmail) *lib.SmtpError {
 	}
 
 	if err = c.Client.Mail(environmentvars.GetVars().SmtpMailFrom.Address); err != nil {
-		return lib.NewSmtpError(MAIL_FROM, err)
+		return lib.NewSmtpError(MailFrom, err)
 	}
 
 	if err = c.Client.Rcpt(c.server.TestEmail); err != nil {
-		return lib.NewSmtpError(RCPT_TO, err)
+		return lib.NewSmtpError(RcptTo, err)
 	}
 
 	w, err := c.Data()
 
 	if err != nil {
-		return lib.NewSmtpError(DATA, err)
+		return lib.NewSmtpError(Data, err)
 	}
 
 	_, err = w.Write([]byte(email.String()))
 	if err != nil {
-		return lib.NewSmtpError(DATA, err)
+		return lib.NewSmtpError(Data, err)
 	}
 
 	err = w.Close()
 
 	if err != nil {
-		return lib.NewSmtpError(DATA, err)
+		return lib.NewSmtpError(Data, err)
 	}
 
 	if err = c.Client.Quit(); err != nil {
-		return lib.NewSmtpError(QUIT, err)
+		return lib.NewSmtpError(Quit, err)
 	}
 
 	return nil

@@ -3,14 +3,14 @@ package mail_sender
 type Operation int
 
 const (
-	TIMEOUT Operation = iota
-	CONN
-	EHLO
-	STARTTLS
-	RCPT_TO
-	MAIL_FROM
-	DATA
-	QUIT
+	Timeout Operation = iota
+	Connection
+	Ehlo
+	StartTls
+	RcptTo
+	MailFrom
+	Data
+	Quit
 )
 
 func (op Operation) String() string {
@@ -24,7 +24,7 @@ func (op Operation) String() string {
 		"DATA",
 		"QUIT"}
 
-	if op < TIMEOUT || op > QUIT {
+	if op < Timeout || op > Quit {
 		return "Unknown"
 	}
 
