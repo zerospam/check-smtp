@@ -12,7 +12,6 @@ type Env struct {
 	ApplicationPort string
 	SharedKey       string
 	SmtpCN          string
-	SmtpCheck       bool
 	SmtpMailFrom    *mail.Address
 	SmtpTimeout     time.Duration
 }
