@@ -49,7 +49,7 @@ func NewTestEmail(subject string, body string, from string, to string) *TestEmai
 
 func (t *TestEmail) String() string {
 	var builder strings.Builder
-	builder.Grow(len(t.Body))
+	builder.Grow(len(t.Body) + len(t.Headers)*10)
 	for header, value := range t.Headers {
 		builder.WriteString(fmt.Sprintf("%s: %s\n", header, value))
 	}
