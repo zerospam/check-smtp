@@ -55,7 +55,7 @@ func (c *Client) SendTestEmail(email test_email.TestEmail) *lib.SmtpError {
 		return lib.NewSmtpError(Ehlo, err)
 	}
 
-	if tlsSupport, _ := c.Client.Extension("StartTls"); tlsSupport {
+	if tlsSupport, _ := c.Client.Extension("STARTTLS"); tlsSupport {
 		tlsConfig := c.getClientTLSConfig(environmentvars.GetVars().SmtpCN)
 		tlsConfig.ServerName = c.server.Server
 		tlsConfig.MinVersion = tls.VersionTLS11
@@ -113,7 +113,7 @@ func (c *Client) SpoofingTest() *lib.SmtpError {
 		return lib.NewSmtpError(Ehlo, err)
 	}
 
-	if tlsSupport, _ := c.Client.Extension("StartTls"); tlsSupport {
+	if tlsSupport, _ := c.Client.Extension("STARTTLS"); tlsSupport {
 		tlsConfig := c.getClientTLSConfig(environmentvars.GetVars().SmtpCN)
 		tlsConfig.ServerName = c.server.Server
 		tlsConfig.MinVersion = tls.VersionTLS11
