@@ -49,7 +49,7 @@ func GetVars() *Env {
 			port = "80"
 		}
 
-		timeoutParsed := 2 * time.Second
+		timeoutParsed := 30 * time.Second
 		timeout := os.Getenv("SMTP_TIMEOUT")
 		if timeout != "" {
 			timeoutParsed, err = time.ParseDuration(timeout)

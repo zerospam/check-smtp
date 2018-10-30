@@ -1,23 +1,23 @@
 package lib
 
 import (
-	"crypto/tls"
-	"github.com/zerospam/check-firewall/lib/tls-generator"
+	"fmt"
+	"net"
 	"time"
 )
 
 type TransportServer struct {
-	Server       string `json:"server"`
-	Port         int    `json:"port"`
-	OnMx         bool   `json:"mx"`
-	TestEmail    string `json:"test_email"`
-	tlsGenerator *tlsgenerator.CertificateGenerator
+	Server    string `json:"server"`
+	Port      int    `json:"port"`
+	OnMx      bool   `json:"mx"`
+	TestEmail string `json:"test_email"`
 }
 
-func (t *TransportServer) getClientTLSConfig(commonName string) *tls.Config {
-	if t.tlsGenerator == nil {
-		t.tlsGenerator = tlsgenerator.NewClient(time.Now(), 30*365*24*time.Hour)
-	}
+func (t *TransportServer) Address() string {
+	return fmt.Sprintf("%s:%d", t.Server, t.Port)
+}
 
-	return t.tlsGenerator.GetTlsClientConfig(commonName)
+func (t *TransportServer) Connect(timeout time.Duration) (conn net.Conn, err error) {
+	conn, err = net.DialTimeout("tcp", t.Address(), timeout)
+	return conn, err
 }

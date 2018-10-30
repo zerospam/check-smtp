@@ -1,9 +1,11 @@
-package smtp
+package mail_sender
 
 type Operation int
 
 const (
-	EHLO Operation = iota
+	TIMEOUT Operation = iota
+	CONN
+	EHLO
 	STARTTLS
 	RCPT_TO
 	MAIL_FROM
@@ -13,6 +15,8 @@ const (
 
 func (op Operation) String() string {
 	names := [...]string{
+		"TIMEOUT",
+		"CONNECTION",
 		"EHLO",
 		"STARTTLS",
 		"RCPT_TO",
@@ -20,7 +24,7 @@ func (op Operation) String() string {
 		"DATA",
 		"QUIT"}
 
-	if op < EHLO || op > QUIT {
+	if op < TIMEOUT || op > QUIT {
 		return "Unknown"
 	}
 

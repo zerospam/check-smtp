@@ -1,9 +1,9 @@
 package lib
 
-import "github.com/zerospam/check-smtp/lib/smtp"
+import "github.com/zerospam/check-smtp/lib/mail-sender"
 
 type SmtpError struct {
-	Operation    smtp.Operation
+	Operation    mail_sender.Operation
 	ErrorMessage string
 }
 
@@ -13,6 +13,6 @@ type CheckResult struct {
 	Error   *SmtpError       `json:"error_message,omitempty"`
 }
 
-func NewSmtpError(Op smtp.Operation, err error) *SmtpError {
+func NewSmtpError(Op mail_sender.Operation, err error) *SmtpError {
 	return &SmtpError{Operation: Op, ErrorMessage: err.Error()}
 }
