@@ -5,6 +5,7 @@ import (
 	"net/mail"
 	"os"
 	"sync"
+	"time"
 )
 
 type Env struct {
@@ -13,6 +14,7 @@ type Env struct {
 	SmtpCN          string
 	SmtpCheck       bool
 	SmtpMailFrom    *mail.Address
+	SmtpTimeout     time.Duration
 }
 
 var instance *Env
@@ -47,11 +49,21 @@ func GetVars() *Env {
 			port = "80"
 		}
 
+		timeoutParsed := 2 * time.Second
+		timeout := os.Getenv("SMTP_TIMEOUT")
+		if timeout != "" {
+			timeoutParsed, err = time.ParseDuration(timeout)
+			if err != nil {
+				panic(err)
+			}
+		}
+
 		instance = &Env{
 			ApplicationPort: port,
 			SharedKey:       os.Getenv("SHARED_KEY"),
 			SmtpCN:          commonName,
 			SmtpMailFrom:    emailFromAddress,
+			SmtpTimeout:     timeoutParsed,
 		}
 	})
 	return instance
