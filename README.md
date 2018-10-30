@@ -9,7 +9,6 @@ Mini HTTP service that takes a JSON with server information and check
 |------------|-----------------------|-----------------------------------------------------------------------------------------------|
 | SHARED_KEY | mandatory              | Secret shared between main app and this one. (Needs to be sent in the header *Authorization*) |
 | PORT       | optional (default 80)  | Port used for the application                                                                 |
-| CHECK_SMTP | optional (default true)| Should the application check for an SMTP server when the server is available.                                                                |
 | SMTP_CN | optional (default hostname)| Common Name to use for client certificate when doing a STARTTLS                                                                |
 | SMTP_FROM | optional (default local@hostname)| Email to use to do the MAIL FROM smtp command                                                               |
 
