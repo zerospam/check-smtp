@@ -9,12 +9,13 @@ import (
 )
 
 type Env struct {
-	ApplicationPort string
-	SharedKey       string
-	SmtpCN          string
-	SmtpMailFrom    *mail.Address
-	SmtpTimeout     time.Duration
-	SmtpMailSpoof   *mail.Address
+	ApplicationPort       string
+	SharedKey             string
+	SmtpCN                string
+	SmtpMailFrom          *mail.Address
+	SmtpConnectionTimeout time.Duration
+	SmtpOperationTimeout  time.Duration
+	SmtpMailSpoof         *mail.Address
 }
 
 var instance *Env
@@ -62,7 +63,7 @@ func GetVars() *Env {
 		}
 
 		timeoutParsed := 30 * time.Second
-		timeout := os.Getenv("SMTP_TIMEOUT")
+		timeout := os.Getenv("SMTP_CONN_TIMEOUT")
 		if timeout != "" {
 			timeoutParsed, err = time.ParseDuration(timeout)
 			if err != nil {
@@ -70,13 +71,23 @@ func GetVars() *Env {
 			}
 		}
 
+		timeoutOptParsed := 30 * time.Second
+		timeoutOpt := os.Getenv("SMTP_OPT_timeoutOpt")
+		if timeoutOpt != "" {
+			timeoutOptParsed, err = time.ParseDuration(timeoutOpt)
+			if err != nil {
+				panic(err)
+			}
+		}
+
 		instance = &Env{
-			ApplicationPort: port,
-			SharedKey:       os.Getenv("SHARED_KEY"),
-			SmtpCN:          commonName,
-			SmtpMailFrom:    emailFromAddress,
-			SmtpTimeout:     timeoutParsed,
-			SmtpMailSpoof:   emailSpoof,
+			ApplicationPort:       port,
+			SharedKey:             os.Getenv("SHARED_KEY"),
+			SmtpCN:                commonName,
+			SmtpMailFrom:          emailFromAddress,
+			SmtpConnectionTimeout: timeoutParsed,
+			SmtpOperationTimeout:  timeoutOptParsed,
+			SmtpMailSpoof:         emailSpoof,
 		}
 	})
 	return instance
