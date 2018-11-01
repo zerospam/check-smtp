@@ -25,7 +25,7 @@ type Client struct {
 
 type SmtpOperation func() error
 
-func NewClient(server lib.TransportServer, localName string, connTimeout time.Duration, optTimeout time.Duration) (*Client, *lib.SmtpError) {
+func NewClient(server *lib.TransportServer, localName string, connTimeout time.Duration, optTimeout time.Duration) (*Client, *lib.SmtpError) {
 	conn, err := server.Connect(connTimeout)
 	if err != nil {
 		return nil, lib.NewSmtpError(smtp_commands.Timeout, err)
@@ -40,7 +40,7 @@ func NewClient(server lib.TransportServer, localName string, connTimeout time.Du
 	return &Client{
 		Client:     client,
 		localName:  localName,
-		server:     &server,
+		server:     server,
 		optTimeout: optTimeout,
 		connection: conn,
 	}, nil
@@ -95,7 +95,7 @@ func (c *Client) setTls() error {
 }
 
 //Try to send the test email
-func (c *Client) SendTestEmail(email test_email.Email) *lib.SmtpError {
+func (c *Client) SendTestEmail(email *test_email.Email) *lib.SmtpError {
 
 	defer c.Client.Close()
 
