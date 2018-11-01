@@ -4,22 +4,28 @@ import (
 	"crypto/tls"
 	"github.com/zerospam/check-firewall/lib/tls-generator"
 	"github.com/zerospam/check-smtp/lib"
-	"github.com/zerospam/check-smtp/lib/environment-vars"
 	"github.com/zerospam/check-smtp/test-email"
 	"log"
+	"net"
 	"net/smtp"
 	"time"
 )
 
 type Client struct {
 	*smtp.Client
-	server       *lib.TransportServer
-	localName    string
-	tlsGenerator *tlsgenerator.CertificateGenerator
+	server        *lib.TransportServer
+	localName     string
+	tlsGenerator  *tlsgenerator.CertificateGenerator
+	optTimeout    time.Duration
+	connection    net.Conn
+	lastError     *lib.SmtpError
+	lastOperation *Operation
 }
 
-func NewClient(server lib.TransportServer, localName string, timeout time.Duration) (*Client, *lib.SmtpError) {
-	conn, err := server.Connect(timeout)
+type SmtpOperation func() error
+
+func NewClient(server lib.TransportServer, localName string, connTimeout time.Duration, optTimeout time.Duration) (*Client, *lib.SmtpError) {
+	conn, err := server.Connect(connTimeout)
 	if err != nil {
 		return nil, lib.NewSmtpError(Timeout, err)
 	}
@@ -29,11 +35,18 @@ func NewClient(server lib.TransportServer, localName string, timeout time.Durati
 	if err != nil {
 		return nil, lib.NewSmtpError(Connection, err)
 	}
+
 	return &Client{
-		Client:    client,
-		localName: localName,
-		server:    &server,
+		Client:     client,
+		localName:  localName,
+		server:     &server,
+		optTimeout: optTimeout,
+		connection: conn,
 	}, nil
+}
+
+func (c *Client) getLastOperation() (*Operation, *lib.SmtpError) {
+	return c.lastOperation, c.lastError
 }
 
 func (c *Client) getClientTLSConfig(commonName string) *tls.Config {
@@ -44,96 +57,108 @@ func (c *Client) getClientTLSConfig(commonName string) *tls.Config {
 	return c.tlsGenerator.GetTlsClientConfig(commonName)
 }
 
+func (c *Client) doOperation(operation Operation, optCallback SmtpOperation) {
+
+	if c.lastError != nil {
+		return
+	}
+	c.lastOperation = &operation
+
+	err := c.connection.SetDeadline(time.Now().Add(c.optTimeout))
+	if err != nil {
+		c.lastError = lib.NewSmtpError(Timeout, err)
+	}
+
+	if err := optCallback(); err != nil {
+		c.lastError = lib.NewSmtpError(operation, err)
+	}
+
+}
+
+func (c *Client) setTls() error {
+	if tlsSupport, _ := c.Client.Extension("STARTTLS"); !tlsSupport {
+		return nil
+	}
+	tlsConfig := c.getClientTLSConfig(c.localName)
+	tlsConfig.ServerName = c.server.Server
+	tlsConfig.MinVersion = tls.VersionTLS11
+	err := c.Client.StartTLS(tlsConfig)
+	if err != nil {
+		log.Printf("Couldn't start TLS transaction: %s", err)
+		return err
+	}
+	state, _ := c.Client.TLSConnectionState()
+	tlsVersion := tlsgenerator.TlsVersion(state)
+	log.Printf("[%s] TLS: %s", c.server.Server, tlsVersion)
+	return nil
+}
+
 //Try to send the test email
 func (c *Client) SendTestEmail(email test_email.TestEmail) *lib.SmtpError {
 
 	defer c.Client.Close()
 
-	var err error
+	c.doOperation(Ehlo, func() error {
+		return c.Client.Hello(c.localName)
+	})
 
-	if err = c.Client.Hello(environmentvars.GetVars().SmtpCN); err != nil {
-		return lib.NewSmtpError(Ehlo, err)
-	}
+	c.doOperation(StartTls, func() error {
+		return c.setTls()
+	})
 
-	if tlsSupport, _ := c.Client.Extension("STARTTLS"); tlsSupport {
-		tlsConfig := c.getClientTLSConfig(environmentvars.GetVars().SmtpCN)
-		tlsConfig.ServerName = c.server.Server
-		tlsConfig.MinVersion = tls.VersionTLS11
-		err = c.Client.StartTLS(tlsConfig)
+	c.doOperation(MailFrom, func() error {
+		return c.Client.Mail(email.From)
+	})
+	c.doOperation(RcptTo, func() error {
+		return c.Client.Rcpt(c.server.TestEmail)
+	})
+
+	c.doOperation(Data, func() error {
+		w, err := c.Data()
+
 		if err != nil {
-			log.Printf("Couldn't start TLS transaction: %s", err)
-			return lib.NewSmtpError(StartTls, err)
+			return err
 		}
-		state, _ := c.Client.TLSConnectionState()
-		tlsVersion := tlsgenerator.TlsVersion(state)
-		log.Printf("[%s] TLS: %s", c.server.Server, tlsVersion)
-	}
 
-	if err = c.Client.Mail(environmentvars.GetVars().SmtpMailFrom.Address); err != nil {
-		return lib.NewSmtpError(MailFrom, err)
-	}
+		_, err = w.Write([]byte(email.String()))
+		if err != nil {
+			return err
+		}
 
-	if err = c.Client.Rcpt(c.server.TestEmail); err != nil {
-		return lib.NewSmtpError(RcptTo, err)
-	}
+		err = w.Close()
 
-	w, err := c.Data()
+		return err
+	})
 
-	if err != nil {
-		return lib.NewSmtpError(Data, err)
-	}
+	c.doOperation(Quit, func() error {
+		return c.Client.Quit()
+	})
 
-	_, err = w.Write([]byte(email.String()))
-	if err != nil {
-		return lib.NewSmtpError(Data, err)
-	}
-
-	err = w.Close()
-
-	if err != nil {
-		return lib.NewSmtpError(Data, err)
-	}
-
-	if err = c.Client.Quit(); err != nil {
-		return lib.NewSmtpError(Quit, err)
-	}
-
-	return nil
+	return c.lastError
 }
 
 //Try to send the test email
-func (c *Client) SpoofingTest() *lib.SmtpError {
+func (c *Client) SpoofingTest(from string) *lib.SmtpError {
+
+	c.lastError = nil
 
 	defer c.Client.Quit()
 	defer c.Client.Close()
 
-	var err error
+	c.doOperation(Ehlo, func() error {
+		return c.Client.Hello(c.localName)
+	})
 
-	if err = c.Client.Hello(environmentvars.GetVars().SmtpCN); err != nil {
-		return lib.NewSmtpError(Ehlo, err)
-	}
+	c.doOperation(StartTls, func() error {
+		return c.setTls()
+	})
 
-	if tlsSupport, _ := c.Client.Extension("STARTTLS"); tlsSupport {
-		tlsConfig := c.getClientTLSConfig(environmentvars.GetVars().SmtpCN)
-		tlsConfig.ServerName = c.server.Server
-		tlsConfig.MinVersion = tls.VersionTLS11
-		err = c.Client.StartTLS(tlsConfig)
-		if err != nil {
-			log.Printf("Couldn't start TLS transaction: %s", err)
-			return lib.NewSmtpError(StartTls, err)
-		}
-		state, _ := c.Client.TLSConnectionState()
-		tlsVersion := tlsgenerator.TlsVersion(state)
-		log.Printf("[%s] TLS: %s", c.server.Server, tlsVersion)
-	}
+	c.doOperation(SpfFail, func() error {
+		return c.Client.Mail(from)
+	})
+	c.doOperation(SpfFail, func() error {
+		return c.Client.Rcpt(c.server.TestEmail)
+	})
 
-	if err = c.Client.Mail(environmentvars.GetVars().SmtpMailFrom.Address); err != nil {
-		return lib.NewSmtpError(SpfFail, err)
-	}
-
-	if err = c.Client.Rcpt(c.server.TestEmail); err != nil {
-		return lib.NewSmtpError(SpfFail, err)
-	}
-
-	return nil
+	return c.lastError
 }
