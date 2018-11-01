@@ -11,9 +11,12 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:cd596abe1695f597a9acb7041e6f450b6c856452f9cbf643863784825fffeaaf"
+  digest = "1:a3b0654511ea741f79e091bdfae571ad688b0f582c8b4da97e619cef128af46a"
   name = "github.com/zerospam/check-firewall"
-  packages = ["lib/tls-generator"]
+  packages = [
+    "lib/handlers",
+    "lib/tls-generator",
+  ]
   pruneopts = "UT"
   revision = "ba18e040fc4052dc248c5a43aac02f4c785bb75c"
 
@@ -22,6 +25,7 @@
   analyzer-version = 1
   input-imports = [
     "github.com/rs/xid",
+    "github.com/zerospam/check-firewall/lib/handlers",
     "github.com/zerospam/check-firewall/lib/tls-generator",
   ]
   solver-name = "gps-cdcl"
