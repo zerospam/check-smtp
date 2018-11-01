@@ -1,9 +1,9 @@
-package mail_sender
+package smtp_commands
 
-type Operation int
+type Commands int
 
 const (
-	Timeout Operation = iota
+	Timeout Commands = iota
 	Connection
 	Ehlo
 	StartTls
@@ -14,7 +14,7 @@ const (
 	SpfFail
 )
 
-func (op Operation) String() string {
+func (op Commands) String() string {
 	names := [...]string{
 		"TIMEOUT",
 		"CONNECTION",

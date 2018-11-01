@@ -1,10 +1,13 @@
 package lib
 
-import "github.com/zerospam/check-smtp/lib/mail-sender"
+import (
+	"fmt"
+	"github.com/zerospam/check-smtp/lib/mail-sender/smtp-commands"
+)
 
 type SmtpError struct {
-	Operation    mail_sender.Operation
-	ErrorMessage string
+	Command      smtp_commands.Commands `json:"command"`
+	ErrorMessage string                 `json:"error_msg"`
 }
 
 type CheckResult struct {
@@ -13,6 +16,10 @@ type CheckResult struct {
 	Error   *SmtpError       `json:"error_message,omitempty"`
 }
 
-func NewSmtpError(Op mail_sender.Operation, err error) *SmtpError {
-	return &SmtpError{Operation: Op, ErrorMessage: err.Error()}
+func NewSmtpError(Op smtp_commands.Commands, err error) *SmtpError {
+	return &SmtpError{Command: Op, ErrorMessage: err.Error()}
+}
+
+func (se *SmtpError) String() string {
+	return fmt.Sprintf("%s: %s", se.Command, se.ErrorMessage)
 }

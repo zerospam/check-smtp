@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"github.com/zerospam/check-firewall/lib/tls-generator"
 	"github.com/zerospam/check-smtp/lib"
+	"github.com/zerospam/check-smtp/lib/mail-sender/smtp-commands"
 	"github.com/zerospam/check-smtp/test-email"
 	"log"
 	"net"
@@ -19,7 +20,7 @@ type Client struct {
 	optTimeout    time.Duration
 	connection    net.Conn
 	lastError     *lib.SmtpError
-	lastOperation *Operation
+	lastOperation *smtp_commands.Commands
 }
 
 type SmtpOperation func() error
@@ -27,13 +28,13 @@ type SmtpOperation func() error
 func NewClient(server lib.TransportServer, localName string, connTimeout time.Duration, optTimeout time.Duration) (*Client, *lib.SmtpError) {
 	conn, err := server.Connect(connTimeout)
 	if err != nil {
-		return nil, lib.NewSmtpError(Timeout, err)
+		return nil, lib.NewSmtpError(smtp_commands.Timeout, err)
 	}
 
 	client, err := smtp.NewClient(conn, server.Server)
 
 	if err != nil {
-		return nil, lib.NewSmtpError(Connection, err)
+		return nil, lib.NewSmtpError(smtp_commands.Connection, err)
 	}
 
 	return &Client{
@@ -45,7 +46,7 @@ func NewClient(server lib.TransportServer, localName string, connTimeout time.Du
 	}, nil
 }
 
-func (c *Client) getLastOperation() (*Operation, *lib.SmtpError) {
+func (c *Client) getLastOperation() (*smtp_commands.Commands, *lib.SmtpError) {
 	return c.lastOperation, c.lastError
 }
 
@@ -57,7 +58,7 @@ func (c *Client) getClientTLSConfig(commonName string) *tls.Config {
 	return c.tlsGenerator.GetTlsClientConfig(commonName)
 }
 
-func (c *Client) doOperation(operation Operation, optCallback SmtpOperation) {
+func (c *Client) doCommand(operation smtp_commands.Commands, optCallback SmtpOperation) {
 
 	if c.lastError != nil {
 		return
@@ -66,7 +67,7 @@ func (c *Client) doOperation(operation Operation, optCallback SmtpOperation) {
 
 	err := c.connection.SetDeadline(time.Now().Add(c.optTimeout))
 	if err != nil {
-		c.lastError = lib.NewSmtpError(Timeout, err)
+		c.lastError = lib.NewSmtpError(smtp_commands.Timeout, err)
 	}
 
 	if err := optCallback(); err != nil {
@@ -98,22 +99,22 @@ func (c *Client) SendTestEmail(email test_email.Email) *lib.SmtpError {
 
 	defer c.Client.Close()
 
-	c.doOperation(Ehlo, func() error {
+	c.doCommand(smtp_commands.Ehlo, func() error {
 		return c.Client.Hello(c.localName)
 	})
 
-	c.doOperation(StartTls, func() error {
+	c.doCommand(smtp_commands.StartTls, func() error {
 		return c.setTls()
 	})
 
-	c.doOperation(MailFrom, func() error {
+	c.doCommand(smtp_commands.MailFrom, func() error {
 		return c.Client.Mail(email.From)
 	})
-	c.doOperation(RcptTo, func() error {
+	c.doCommand(smtp_commands.RcptTo, func() error {
 		return c.Client.Rcpt(c.server.TestEmail)
 	})
 
-	c.doOperation(Data, func() error {
+	c.doCommand(smtp_commands.Data, func() error {
 		w, err := c.Data()
 
 		if err != nil {
@@ -132,7 +133,7 @@ func (c *Client) SendTestEmail(email test_email.Email) *lib.SmtpError {
 		return err
 	})
 
-	c.doOperation(Quit, func() error {
+	c.doCommand(smtp_commands.Quit, func() error {
 		return c.Client.Quit()
 	})
 
@@ -147,18 +148,18 @@ func (c *Client) SpoofingTest(from string) *lib.SmtpError {
 	defer c.Client.Quit()
 	defer c.Client.Close()
 
-	c.doOperation(Ehlo, func() error {
+	c.doCommand(smtp_commands.Ehlo, func() error {
 		return c.Client.Hello(c.localName)
 	})
 
-	c.doOperation(StartTls, func() error {
+	c.doCommand(smtp_commands.StartTls, func() error {
 		return c.setTls()
 	})
 
-	c.doOperation(SpfFail, func() error {
+	c.doCommand(smtp_commands.SpfFail, func() error {
 		return c.Client.Mail(from)
 	})
-	c.doOperation(SpfFail, func() error {
+	c.doCommand(smtp_commands.SpfFail, func() error {
 		return c.Client.Rcpt(c.server.TestEmail)
 	})
 
