@@ -1,5 +1,7 @@
 package smtp_commands
 
+import "bytes"
+
 type Commands int
 
 const (
@@ -14,7 +16,7 @@ const (
 	SpfFail
 )
 
-func (op Commands) String() string {
+func (c Commands) String() string {
 	names := [...]string{
 		"TIMEOUT",
 		"CONNECTION",
@@ -26,9 +28,16 @@ func (op Commands) String() string {
 		"QUIT",
 		"SPF_FAIL"}
 
-	if op < Timeout || op > SpfFail {
+	if c < Timeout || c > SpfFail {
 		return "Unknown"
 	}
 
-	return names[op]
+	return names[c]
+}
+
+func (c *Commands) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString(`"`)
+	buffer.WriteString(c.String())
+	buffer.WriteString(`"`)
+	return buffer.Bytes(), nil
 }
