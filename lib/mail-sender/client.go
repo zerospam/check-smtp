@@ -94,7 +94,7 @@ func (c *Client) setTls() error {
 }
 
 //Try to send the test email
-func (c *Client) SendTestEmail(email test_email.TestEmail) *lib.SmtpError {
+func (c *Client) SendTestEmail(email test_email.Email) *lib.SmtpError {
 
 	defer c.Client.Close()
 
@@ -119,6 +119,8 @@ func (c *Client) SendTestEmail(email test_email.TestEmail) *lib.SmtpError {
 		if err != nil {
 			return err
 		}
+
+		email.PrepareHeaders(c.localName)
 
 		_, err = w.Write([]byte(email.String()))
 		if err != nil {
