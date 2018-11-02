@@ -2,12 +2,12 @@ package mail_sender
 
 import (
 	"crypto/tls"
+	"fmt"
 	"github.com/zerospam/check-firewall/lib/tls-generator"
 	"github.com/zerospam/check-smtp/lib"
 	"github.com/zerospam/check-smtp/lib/mail-sender/smtp-commands"
 	"github.com/zerospam/check-smtp/test-email"
 	"log"
-	"net"
 	"net/smtp"
 	"time"
 )
@@ -18,13 +18,14 @@ type Client struct {
 	localName     string
 	tlsGenerator  *tlsgenerator.CertificateGenerator
 	optTimeout    time.Duration
-	connection    net.Conn
 	lastError     *lib.SmtpError
 	lastOperation *smtp_commands.Commands
+	sentTestEmail bool
 }
 
 type SmtpOperation func() error
 
+//Create new client to send the test email and test the SMTP server
 func NewClient(server *lib.TransportServer, localName string, connTimeout time.Duration, optTimeout time.Duration) (*Client, *lib.SmtpError) {
 	conn, err := server.Connect(connTimeout)
 	if err != nil {
@@ -42,11 +43,10 @@ func NewClient(server *lib.TransportServer, localName string, connTimeout time.D
 		localName:  localName,
 		server:     server,
 		optTimeout: optTimeout,
-		connection: conn,
 	}, nil
 }
 
-func (c *Client) getLastOperation() (*smtp_commands.Commands, *lib.SmtpError) {
+func (c *Client) GetLastOperation() (*smtp_commands.Commands, *lib.SmtpError) {
 	return c.lastOperation, c.lastError
 }
 
@@ -58,20 +58,36 @@ func (c *Client) getClientTLSConfig(commonName string) *tls.Config {
 	return c.tlsGenerator.GetTlsClientConfig(commonName)
 }
 
-func (c *Client) doCommand(operation smtp_commands.Commands, optCallback SmtpOperation) {
+func (c *Client) doCommand(command smtp_commands.Commands, optCallback SmtpOperation) {
 
 	if c.lastError != nil {
 		return
 	}
-	c.lastOperation = &operation
 
-	err := c.connection.SetDeadline(time.Now().Add(c.optTimeout))
-	if err != nil {
-		c.lastError = lib.NewSmtpError(smtp_commands.Timeout, err)
-	}
+	c.lastOperation = &command
+	//second parameter to not wait for a receiver.
+	//This happen in the case the timeout returns before the command
+	ch := make(chan error, 1)
 
-	if err := optCallback(); err != nil {
-		c.lastError = lib.NewSmtpError(operation, err)
+	go func() {
+		ch <- optCallback()
+	}()
+
+	timer := time.NewTimer(c.optTimeout)
+	select {
+	case err := <-ch:
+		//Stop the time has the command returned
+		//@see https://golang.org/pkg/time/#After
+		//Avoiding having a hanging timer
+		timer.Stop()
+		if err != nil {
+			c.lastError = lib.NewSmtpError(command, err)
+		}
+		break
+
+	case <-timer.C:
+		c.lastError = lib.NewSmtpError(smtp_commands.Timeout, fmt.Errorf("CMD [%s] Timed out after %s", command, c.optTimeout))
+		break
 	}
 
 }
@@ -142,8 +158,6 @@ func (c *Client) SendTestEmail(email *test_email.Email) *lib.SmtpError {
 
 //Try to send the test email
 func (c *Client) SpoofingTest(from string) *lib.SmtpError {
-
-	c.lastError = nil
 
 	defer c.Client.Quit()
 	defer c.Client.Close()
