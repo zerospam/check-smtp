@@ -72,7 +72,7 @@ func GetVars() *Env {
 		}
 
 		timeoutOptParsed := 30 * time.Second
-		timeoutOpt := os.Getenv("SMTP_OPT_timeoutOpt")
+		timeoutOpt := os.Getenv("SMTP_OPT_TIMEOUT")
 		if timeoutOpt != "" {
 			timeoutOptParsed, err = time.ParseDuration(timeoutOpt)
 			if err != nil {
