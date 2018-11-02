@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	firewall_handlers "github.com/zerospam/check-firewall/lib/handlers"
 	"github.com/zerospam/check-smtp/http/handlers"
 	"github.com/zerospam/check-smtp/lib/environment-vars"
 	"net/http"
@@ -10,7 +9,7 @@ import (
 
 func init() {
 	http.HandleFunc("/check", handlers.CheckTransport)
-	http.HandleFunc("/healthz", firewall_handlers.HealthCheck)
+	http.HandleFunc("/healthz", handlers.HealthCheck)
 }
 
 func main() {
