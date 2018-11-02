@@ -19,7 +19,7 @@ type Client struct {
 	tlsGenerator  *tlsgenerator.CertificateGenerator
 	optTimeout    time.Duration
 	lastError     *lib.SmtpError
-	lastOperation *smtp_commands.Commands
+	lastCommand   *smtp_commands.Commands
 	sentTestEmail bool
 }
 
@@ -46,8 +46,8 @@ func NewClient(server *lib.TransportServer, localName string, connTimeout time.D
 	}, nil
 }
 
-func (c *Client) GetLastOperation() (*smtp_commands.Commands, *lib.SmtpError) {
-	return c.lastOperation, c.lastError
+func (c *Client) GetLastCommand() (*smtp_commands.Commands, *lib.SmtpError) {
+	return c.lastCommand, c.lastError
 }
 
 func (c *Client) getClientTLSConfig(commonName string) *tls.Config {
@@ -64,7 +64,7 @@ func (c *Client) doCommand(command smtp_commands.Commands, optCallback SmtpOpera
 		return
 	}
 
-	c.lastOperation = &command
+	c.lastCommand = &command
 	//second parameter to not wait for a receiver.
 	//This happen in the case the timeout returns before the command
 	ch := make(chan error, 1)
@@ -76,9 +76,9 @@ func (c *Client) doCommand(command smtp_commands.Commands, optCallback SmtpOpera
 	timer := time.NewTimer(c.optTimeout)
 	select {
 	case err := <-ch:
-		//Stop the time has the command returned
+		//Stop the timer as the command returned a result
 		//@see https://golang.org/pkg/time/#After
-		//Avoiding having a hanging timer
+		//Avoiding having a hanging timers
 		timer.Stop()
 		if err != nil {
 			c.lastError = lib.NewSmtpError(command, err)
