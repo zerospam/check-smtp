@@ -17,7 +17,7 @@ const (
 )
 
 func (c Commands) String() string {
-	names := [...]string{
+	names := []string{
 		"TIMEOUT",
 		"CONNECTION",
 		"EHLO",

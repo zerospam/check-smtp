@@ -77,9 +77,8 @@ func CheckTransport(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	json.NewDecoder(req.Body).Decode(&testEmailRequest)
-
 	defer req.Body.Close()
+	json.NewDecoder(req.Body).Decode(&testEmailRequest)
 
 	w.Header().Add("Content-Type", "application/json")
 	email := testEmailRequest.ToTestEmail()
