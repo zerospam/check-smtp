@@ -41,6 +41,13 @@ func testServer(server *lib.TransportServer, email *test_email.Email) lib.CheckR
 		return generateResult(server, err)
 	}
 
+	//new client to do the spoofing
+	//Can't reuse previous client as it closed the connection
+	client, err = mail_sender.NewClient(server, environmentvars.GetVars().SmtpCN, environmentvars.GetVars().SmtpConnectionTimeout, environmentvars.GetVars().SmtpOperationTimeout)
+	if err != nil {
+		return generateResult(server, err)
+	}
+
 	err = client.SpoofingTest(environmentvars.GetVars().SmtpMailSpoof.Address)
 
 	if err != nil {
