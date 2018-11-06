@@ -1,0 +1,90 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: {{ template "check-smtp.fullname" . }}
+  labels:
+    app: {{ template "check-smtp.name" . }}
+    chart: {{ template "check-smtp.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      app: {{ template "check-smtp.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "check-smtp.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.application.port }} 
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          env:
+          - name: PORT
+            value: {{ .Values.application.port }}
+          - name: SMTP_CONN_TIMEOUT
+            value: {{ .Values.application.smtp.timeout.connection | quote }}
+          - name: SMTP_OPT_TIMEOUT
+            value: {{ .Values.application.smtp.timeout.command | quote }}
+          - name: SMTP_CN          
+{{ if .Values.application.smtp.localName}}
+            value: {{ .Values.application.smtp.localName | quote }}
+{{ else }}          
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+{{ end }}
+          - name: SHARED_KEY
+            valueFrom:
+              secretKeyRef:
+                name: {{ template "check-smtp.name" . }}
+                key: SHARED_KEY
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- with .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+{{ if .Values.affinity}}
+    {{- with .Values.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+{{else}}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ template "check-smtp.name" . }}          
+              topologyKey: kubernetes.io/hostname
+{{end}}
+    {{- with .Values.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ template "check-smtp.fullname" . }}
+  labels:
+    app: {{ template "check-smtp.name" . }}
+    chart: {{ template "check-smtp.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+      name: http
+  selector:
+    app: {{ template "check-smtp.name" . }}
+    release: {{ .Release.Name }}
