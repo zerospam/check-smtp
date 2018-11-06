@@ -24,6 +24,24 @@ spec:
         app: {{ template "check-smtp.name" . }}
         release: {{ .Release.Name }}
     spec:
+      affinity:
+{{- if .Values.affinity }}
+    {{- with .Values.affinity }}      
+{{ toYaml . | indent 8 }}
+    {{- end }}
+{{- else}}
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - {{ template "check-smtp.name" . }}          
+              topologyKey: kubernetes.io/hostname
+{{- end}}
       containers:
         - name: {{ .Chart.Name }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -42,19 +60,19 @@ spec:
               port: http
           env:
           - name: PORT
-            value: {{ .Values.application.port }}
+            value: {{ .Values.application.port | quote }}
           - name: SMTP_CONN_TIMEOUT
             value: {{ .Values.application.smtp.timeout.connection | quote }}
           - name: SMTP_OPT_TIMEOUT
             value: {{ .Values.application.smtp.timeout.command | quote }}
           - name: SMTP_CN          
-{{ if .Values.application.smtp.localName}}
+{{- if .Values.application.smtp.localName }}
             value: {{ .Values.application.smtp.localName | quote }}
-{{ else }}          
+{{- else }}  
             valueFrom:
               fieldRef:
                 fieldPath: metadata.name
-{{ end }}
+{{- end }}
           - name: SHARED_KEY
             valueFrom:
               secretKeyRef:
@@ -64,26 +82,8 @@ spec:
 {{ toYaml .Values.resources | indent 12 }}
     {{- with .Values.nodeSelector }}
       nodeSelector:
-{{ toYaml . | indent 8 }}
-    {{- end }}
-{{ if .Values.affinity}}
-    {{- with .Values.affinity }}
-      affinity:
-{{ toYaml . | indent 8 }}
-    {{- end }}
-{{else}}
-        podAntiAffinity:
-          preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - {{ template "check-smtp.name" . }}          
-              topologyKey: kubernetes.io/hostname
-{{end}}
+{{- toYaml . | indent 8 }}
+    {{- end}}      
     {{- with .Values.tolerations }}
       tolerations:
 {{ toYaml . | indent 8 }}
