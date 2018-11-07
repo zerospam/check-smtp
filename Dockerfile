@@ -21,7 +21,8 @@ FROM alpine:latest
 
 ARG APP_PATH
 ARG APP_NAME
-RUN apk --update --no-cache add ca-certificates
+RUN sed -i -e 's/dl-cdn/dl-4/' /etc/apk/repositories \
+    && apk --update --no-cache add ca-certificates
 
 COPY --from=builder ${APP_PATH}/${APP_NAME} /${APP_NAME}
 
