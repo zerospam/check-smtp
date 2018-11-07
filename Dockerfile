@@ -17,10 +17,11 @@ WORKDIR $APP_PATH
 RUN dep ensure
 RUN go build -a -installsuffix cgo -o $APP_NAME
 
-FROM scratch
+FROM alpine:latest
 
 ARG APP_PATH
 ARG APP_NAME
+RUN apk --update --no-cache add ca-certificates
 
 COPY --from=builder ${APP_PATH}/${APP_NAME} /${APP_NAME}
 
