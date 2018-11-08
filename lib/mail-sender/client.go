@@ -9,6 +9,7 @@ import (
 	"github.com/zerospam/check-smtp/test-email"
 	"log"
 	"net/smtp"
+	"strings"
 	"time"
 )
 
@@ -21,6 +22,7 @@ type Client struct {
 	lastError     *lib.SmtpError
 	lastCommand   *smtp_commands.Commands
 	sentTestEmail bool
+	helloBanner   string
 }
 
 type SmtpOperation func() error
@@ -29,25 +31,33 @@ type SmtpOperation func() error
 func NewClient(server *lib.TransportServer, localName string, connTimeout time.Duration, optTimeout time.Duration) (*Client, *lib.SmtpError) {
 	conn, err := server.Connect(connTimeout)
 	if err != nil {
-		return nil, lib.NewSmtpError(smtp_commands.Timeout, err)
+		return nil, lib.NewSmtpError(smtp_commands.Connection, err)
 	}
 
-	client, err := smtp.NewClient(conn, server.Server)
+	connection := NewConnection(conn)
+	client, err := smtp.NewClient(connection, server.Server)
 
 	if err != nil {
 		return nil, lib.NewSmtpError(smtp_commands.Connection, err)
 	}
 
+	banner := strings.Trim(string(connection.firstRead), "\u0000\r\n")
+
 	return &Client{
-		Client:     client,
-		localName:  localName,
-		server:     server,
-		optTimeout: optTimeout,
+		Client:      client,
+		localName:   localName,
+		server:      server,
+		optTimeout:  optTimeout,
+		helloBanner: banner,
 	}, nil
 }
 
 func (c *Client) GetLastCommand() (*smtp_commands.Commands, *lib.SmtpError) {
 	return c.lastCommand, c.lastError
+}
+
+func (c *Client) GetHelloBanner() string {
+	return c.helloBanner
 }
 
 func (c *Client) getClientTLSConfig(commonName string) *tls.Config {

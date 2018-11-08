@@ -11,9 +11,9 @@ type SmtpError struct {
 }
 
 type CheckResult struct {
-	Request *TransportServer `json:"request"`
-	Success bool             `json:"success"`
-	Error   *SmtpError       `json:"error_message,omitempty"`
+	Success     bool       `json:"success"`
+	HelloBanner string     `json:"hello_banner"`
+	Error       *SmtpError `json:"error_message,omitempty"`
 }
 
 func NewSmtpError(Op smtp_commands.Commands, err error) *SmtpError {

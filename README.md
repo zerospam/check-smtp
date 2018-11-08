@@ -39,3 +39,26 @@ Mini HTTP service that takes a JSON with server information and check
 | server.port   | Port to use to attempt the connection                                          |
 | server.mx     | Instead of resolving the IP, resolve the MX of the server first then check IPs |
 | server.test_email     | Used as RCPT TO when doing SMTP checks |
+
+
+## Response
+
+### Success
+```json
+{
+    "success": true,
+    "hello_banner": "220 example.com ESMTP Postfix (Debian/GNU)"
+}
+```
+
+### Error
+```json
+{
+    "success": false,
+    "hello_banner": "220 set.example.com ESMTP Postfix (Debian/GNU)",
+    "error_message": {
+        "command": "STARTTLS",
+        "error_msg": "x509: certificate is valid for example.com, not set.example.com"
+    }
+}
+```
