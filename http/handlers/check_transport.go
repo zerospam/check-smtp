@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"github.com/zerospam/check-smtp/lib"
 	"github.com/zerospam/check-smtp/lib/environment-vars"
-	"github.com/zerospam/check-smtp/lib/mail-sender"
 	"github.com/zerospam/check-smtp/test-email"
 	"log"
 	"net/http"
@@ -30,7 +29,7 @@ func generateResult(smtpError *lib.SmtpError, banner string) lib.CheckResult {
 }
 
 func testServer(server *lib.TransportServer, email *test_email.Email) lib.CheckResult {
-	client, err := mail_sender.NewClient(server, environmentvars.GetVars().SmtpCN, environmentvars.GetVars().SmtpConnectionTimeout, environmentvars.GetVars().SmtpOperationTimeout)
+	client, err := environmentvars.GetVars().NewSmtpClient(server)
 	if err != nil {
 		return generateResult(err, "")
 	}
@@ -43,7 +42,7 @@ func testServer(server *lib.TransportServer, email *test_email.Email) lib.CheckR
 
 	//new client to do the spoofing
 	//Can't reuse previous client as it closed the connection
-	client, err = mail_sender.NewClient(server, environmentvars.GetVars().SmtpCN, environmentvars.GetVars().SmtpConnectionTimeout, environmentvars.GetVars().SmtpOperationTimeout)
+	client, err = environmentvars.GetVars().NewSmtpClient(server)
 	if err != nil {
 		return generateResult(err, client.GetHelloBanner())
 	}

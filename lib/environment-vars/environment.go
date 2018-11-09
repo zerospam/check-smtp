@@ -3,6 +3,8 @@ package environmentvars
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/zerospam/check-smtp/lib"
+	"github.com/zerospam/check-smtp/lib/mail-sender"
 	"net/mail"
 	"os"
 	"sync"
@@ -103,4 +105,8 @@ func GetVars() *Env {
 		}
 	})
 	return instance
+}
+
+func (e *Env) NewSmtpClient(server *lib.TransportServer) (*mail_sender.Client, *lib.SmtpError) {
+	return mail_sender.NewClient(server, e.SmtpCN, e.SmtpConnectionTimeout, e.SmtpOperationTimeout, e.TLSMinVersion)
 }
