@@ -57,7 +57,8 @@ Mini HTTP service that takes a JSON with server information and check
 ```json
 {
     "success": true,
-    "hello_banner": "220 example.com ESMTP Postfix (Debian/GNU)"
+    "hello_banner": "220 example.com ESMTP Postfix (Debian/GNU)",
+    "tls_version": "VersionTLS12"
 }
 ```
 
@@ -66,6 +67,7 @@ Mini HTTP service that takes a JSON with server information and check
 {
     "success": false,
     "hello_banner": "220 set.example.com ESMTP Postfix (Debian/GNU)",
+    "tls_version": "VersionTLS12",
     "error_message": {
         "command": "STARTTLS",
         "error_msg": "x509: certificate is valid for example.com, not set.example.com"

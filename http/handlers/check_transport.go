@@ -19,11 +19,12 @@ func getRequestIp(req *http.Request) string {
 	return req.RemoteAddr
 }
 
-func generateResult(smtpError *lib.SmtpError, banner string) lib.CheckResult {
+func generateResult(smtpError *lib.SmtpError, banner string, tlsVersion string) lib.CheckResult {
 	success := smtpError == nil
 	return lib.CheckResult{
 		Error:       smtpError,
 		Success:     success,
+		TlsVersion:  tlsVersion,
 		HelloBanner: banner,
 	}
 }
@@ -31,29 +32,33 @@ func generateResult(smtpError *lib.SmtpError, banner string) lib.CheckResult {
 func testServer(server *lib.TransportServer, email *test_email.Email) lib.CheckResult {
 	client, err := environmentvars.GetVars().NewSmtpClient(server)
 	if err != nil {
-		return generateResult(err, "")
+		return generateResult(err, "", "")
 	}
 
 	err = client.SendTestEmail(email)
 
 	if err != nil {
-		return generateResult(err, client.GetHelloBanner())
+		banner, tlsVersion := client.GetHelloBanner()
+		return generateResult(err, banner, tlsVersion)
 	}
 
 	//new client to do the spoofing
 	//Can't reuse previous client as it closed the connection
 	client, err = environmentvars.GetVars().NewSmtpClient(server)
 	if err != nil {
-		return generateResult(err, client.GetHelloBanner())
+		banner, tlsVersion := client.GetHelloBanner()
+		return generateResult(err, banner, tlsVersion)
 	}
 
 	err = client.SpoofingTest(environmentvars.GetVars().SmtpMailSpoof.Address)
 
 	if err != nil {
-		return generateResult(err, client.GetHelloBanner())
+		banner, tlsVersion := client.GetHelloBanner()
+		return generateResult(err, banner, tlsVersion)
 	}
 
-	return generateResult(nil, client.GetHelloBanner())
+	banner, tlsVersion := client.GetHelloBanner()
+	return generateResult(err, banner, tlsVersion)
 
 }
 

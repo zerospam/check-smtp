@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/zerospam/check-smtp/lib"
 	"github.com/zerospam/check-smtp/lib/mail-sender"
+	"github.com/zerospam/check-smtp/lib/tls_parser"
 	"net/mail"
 	"os"
 	"sync"
@@ -87,7 +88,7 @@ func GetVars() *Env {
 		tlsVersionParsed := uint16(tls.VersionTLS12)
 		tlsVersion := os.Getenv("TLS_MIN_VERSION")
 		if tlsVersion != "" {
-			tlsVersionParsed, err = tlsDecodeString(tlsVersion)
+			tlsVersionParsed, err = tls_parser.DecodeString(tlsVersion)
 			if err != nil {
 				panic(err)
 			}

@@ -6,8 +6,8 @@ import (
 	"github.com/zerospam/check-firewall/lib/tls-generator"
 	"github.com/zerospam/check-smtp/lib"
 	"github.com/zerospam/check-smtp/lib/mail-sender/smtp-commands"
+	"github.com/zerospam/check-smtp/lib/tls_parser"
 	"github.com/zerospam/check-smtp/test-email"
-	"log"
 	"net/smtp"
 	"strings"
 	"time"
@@ -15,15 +15,16 @@ import (
 
 type Client struct {
 	*smtp.Client
-	server        *lib.TransportServer
-	localName     string
-	tlsGenerator  *tlsgenerator.CertificateGenerator
-	optTimeout    time.Duration
-	lastError     *lib.SmtpError
-	lastCommand   *smtp_commands.Commands
-	sentTestEmail bool
-	helloBanner   string
-	tlsMinVersion uint16
+	server         *lib.TransportServer
+	localName      string
+	tlsGenerator   *tlsgenerator.CertificateGenerator
+	optTimeout     time.Duration
+	lastError      *lib.SmtpError
+	lastCommand    *smtp_commands.Commands
+	sentTestEmail  bool
+	helloBanner    string
+	tlsMinVersion  uint16
+	tlsVersionUsed uint16
 }
 
 type SmtpOperation func() error
@@ -45,12 +46,13 @@ func NewClient(server *lib.TransportServer, localName string, connTimeout time.D
 	banner := strings.Trim(string(connection.firstRead), "\u0000\r\n")
 
 	return &Client{
-		Client:        client,
-		localName:     localName,
-		server:        server,
-		optTimeout:    optTimeout,
-		helloBanner:   banner,
-		tlsMinVersion: tlsMinVersion,
+		Client:         client,
+		localName:      localName,
+		server:         server,
+		optTimeout:     optTimeout,
+		helloBanner:    banner,
+		tlsMinVersion:  tlsMinVersion,
+		tlsVersionUsed: 0,
 	}, nil
 }
 
@@ -58,8 +60,18 @@ func (c *Client) GetLastCommand() (*smtp_commands.Commands, *lib.SmtpError) {
 	return c.lastCommand, c.lastError
 }
 
-func (c *Client) GetHelloBanner() string {
-	return c.helloBanner
+func (c *Client) GetHelloBanner() (banner string, tlsVersion string) {
+
+	if c.tlsVersionUsed == 0 {
+		return c.helloBanner, "None"
+	}
+
+	tlsVersion, err := tls_parser.ToString(c.tlsVersionUsed)
+	if err != nil {
+		tlsVersion = err.Error()
+	}
+
+	return c.helloBanner, tlsVersion
 }
 
 func (c *Client) getClientTLSConfig(commonName string) *tls.Config {
@@ -116,12 +128,11 @@ func (c *Client) setTls() error {
 	tlsConfig.InsecureSkipVerify = true
 	err := c.Client.StartTLS(tlsConfig)
 	if err != nil {
-		log.Printf("Couldn't start TLS transaction: %s", err)
 		return err
 	}
 	state, _ := c.Client.TLSConnectionState()
-	tlsVersion := tlsgenerator.TlsVersion(state)
-	log.Printf("[%s] TLS: %s", c.server.Server, tlsVersion)
+	c.tlsVersionUsed = state.Version
+
 	return nil
 }
 

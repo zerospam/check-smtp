@@ -13,6 +13,7 @@ type SmtpError struct {
 type CheckResult struct {
 	Success     bool       `json:"success"`
 	HelloBanner string     `json:"hello_banner"`
+	TlsVersion  string     `json:"tls_version"`
 	Error       *SmtpError `json:"error_message,omitempty"`
 }
 
