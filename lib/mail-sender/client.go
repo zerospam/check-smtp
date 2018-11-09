@@ -109,6 +109,9 @@ func (c *Client) setTls() error {
 	tlsConfig := c.getClientTLSConfig(c.localName)
 	tlsConfig.ServerName = c.server.Server
 	tlsConfig.MinVersion = tls.VersionTLS11
+	//It's impossible to verify correctly the server in the case of a SMTP transaction
+	//Better be permissive
+	tlsConfig.InsecureSkipVerify = true
 	err := c.Client.StartTLS(tlsConfig)
 	if err != nil {
 		log.Printf("Couldn't start TLS transaction: %s", err)
