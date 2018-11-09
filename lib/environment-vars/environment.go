@@ -1,6 +1,7 @@
 package environmentvars
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net/mail"
 	"os"
@@ -16,6 +17,7 @@ type Env struct {
 	SmtpConnectionTimeout time.Duration
 	SmtpOperationTimeout  time.Duration
 	SmtpMailSpoof         *mail.Address
+	TLSMinVersion         uint16
 }
 
 var instance *Env
@@ -80,6 +82,15 @@ func GetVars() *Env {
 			}
 		}
 
+		tlsVersionParsed := uint16(tls.VersionTLS12)
+		tlsVersion := os.Getenv("TLS_MIN_VERSION")
+		if tlsVersion != "" {
+			tlsVersionParsed, err = tlsDecodeString(tlsVersion)
+			if err != nil {
+				panic(err)
+			}
+		}
+
 		instance = &Env{
 			ApplicationPort:       port,
 			SharedKey:             os.Getenv("SHARED_KEY"),
@@ -88,6 +99,7 @@ func GetVars() *Env {
 			SmtpConnectionTimeout: timeoutParsed,
 			SmtpOperationTimeout:  timeoutOptParsed,
 			SmtpMailSpoof:         emailSpoof,
+			TLSMinVersion:         tlsVersionParsed,
 		}
 	})
 	return instance

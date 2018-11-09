@@ -13,6 +13,16 @@ Mini HTTP service that takes a JSON with server information and check
 | SMTP_FROM_SPOOF | optional (default spoof@amazon.com)| Email to check for SPF checks (spoofing this email as MAIL FROM)                                              |
 | SMTP_CONN_TIMEOUT | optional (30 seconds)| How long to wait for the SMTP server to answer|
 | SMTP_OPT_TIMEOUT | optional (30 seconds)| How long to wait for the SMTP server to answer each command|
+|TLS_MIN_VERSION| optional (TLS1.2) | Check TLS Table for acceptable values. This is used when doing a STARTTLS on server that supports it.|
+
+### TLS
+
+| TLS Version | EnvVar |
+|-------------|--------|
+| SSLv3.0     | SSL30  |
+| TLSv1       | TLS10  |
+| TLSv1.1     | TLS11  |
+| TLS1.2      | TLS12  |
 
 ## Data
 ```json

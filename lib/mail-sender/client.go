@@ -23,12 +23,13 @@ type Client struct {
 	lastCommand   *smtp_commands.Commands
 	sentTestEmail bool
 	helloBanner   string
+	tlsMinVersion uint16
 }
 
 type SmtpOperation func() error
 
 //Create new client to send the test email and test the SMTP server
-func NewClient(server *lib.TransportServer, localName string, connTimeout time.Duration, optTimeout time.Duration) (*Client, *lib.SmtpError) {
+func NewClient(server *lib.TransportServer, localName string, connTimeout time.Duration, optTimeout time.Duration, tlsMinVersion uint16) (*Client, *lib.SmtpError) {
 	conn, err := server.Connect(connTimeout)
 	if err != nil {
 		return nil, lib.NewSmtpError(smtp_commands.Connection, err)
@@ -44,11 +45,12 @@ func NewClient(server *lib.TransportServer, localName string, connTimeout time.D
 	banner := strings.Trim(string(connection.firstRead), "\u0000\r\n")
 
 	return &Client{
-		Client:      client,
-		localName:   localName,
-		server:      server,
-		optTimeout:  optTimeout,
-		helloBanner: banner,
+		Client:        client,
+		localName:     localName,
+		server:        server,
+		optTimeout:    optTimeout,
+		helloBanner:   banner,
+		tlsMinVersion: tlsMinVersion,
 	}, nil
 }
 
@@ -108,7 +110,7 @@ func (c *Client) setTls() error {
 	}
 	tlsConfig := c.getClientTLSConfig(c.localName)
 	tlsConfig.ServerName = c.server.Server
-	tlsConfig.MinVersion = tls.VersionTLS11
+	tlsConfig.MinVersion = c.tlsMinVersion
 	//It's impossible to verify correctly the server in the case of a SMTP transaction
 	//Better be permissive
 	tlsConfig.InsecureSkipVerify = true
