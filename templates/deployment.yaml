@@ -61,6 +61,8 @@ spec:
           env:
           - name: PORT
             value: {{ .Values.application.port | quote }}
+          - name: TLS_MIN_VERSION
+            value: {{ .Values.application.tlsMinVersion | quote }}
           - name: SMTP_CONN_TIMEOUT
             value: {{ .Values.application.smtp.timeout.connection | quote }}
           - name: SMTP_OPT_TIMEOUT

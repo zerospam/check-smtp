@@ -6,7 +6,7 @@ replicaCount: 1
 
 image:
   repository: zerospam/check-smtp
-  tag: 0.2
+  tag: "1.1"
   pullPolicy: IfNotPresent
 
 service:
@@ -16,6 +16,7 @@ service:
 application:
   port: 8080
   sharedKey: "change me"
+  tlsMinVersion: "TLS12"
   smtp:
     localName: "fqdn.example.com"
     timeout:

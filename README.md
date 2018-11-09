@@ -1,5 +1,13 @@
 # Repository
-Check-SMTP
+
+## Build
+
+```bash
+helm package .
+helm index .
+```
+
+## Add
 
 ```bash
 helm repo add check-smtp https://raw.githubusercontent.com/zerospam/check-smtp/helm-chart/

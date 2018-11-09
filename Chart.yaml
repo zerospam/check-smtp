@@ -2,4 +2,4 @@ apiVersion: v1
 appVersion: "1.0"
 description: A http service to check for connectivity to an SMTP server
 name: check-smtp
-version: 0.1.0
+version: 0.2.0
