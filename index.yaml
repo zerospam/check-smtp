@@ -3,11 +3,20 @@ entries:
   check-smtp:
   - apiVersion: v1
     appVersion: "1.0"
-    created: 2018-11-07T15:26:50.521139827-05:00
+    created: 2018-11-09T16:07:30.297766305-05:00
+    description: A http service to check for connectivity to an SMTP server
+    digest: d99759eee9486604464f6bde333a15696316ddfedbec374d7dbfd507cce9a8dd
+    name: check-smtp
+    urls:
+    - dist/check-smtp-0.2.0.tgz
+    version: 0.2.0
+  - apiVersion: v1
+    appVersion: "1.0"
+    created: 2018-11-09T16:07:30.291574105-05:00
     description: A http service to check for connectivity to an SMTP server
     digest: 3670880c81912c84cdbdec63219d2815edaad8554a555939343017a36088cbcf
     name: check-smtp
     urls:
-    - check-smtp-0.1.0.tgz
+    - dist/check-smtp-0.1.0.tgz
     version: 0.1.0
-generated: 2018-11-07T15:26:50.520683274-05:00
+generated: 2018-11-09T16:07:30.291254538-05:00

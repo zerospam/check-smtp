@@ -4,7 +4,7 @@
 
 ```bash
 helm package .
-helm index .
+helm repo index .
 ```
 
 ## Add
