@@ -28,7 +28,7 @@ func (t *TransportServer) Connect(timeout time.Duration) (conn net.Conn, err err
 		if len(mxRecords) == 0 {
 			return nil, fmt.Errorf("MX Records: no mx records found for %s", t.Server)
 		}
-		address = mxRecords[0].Host
+		address = fmt.Sprintf("%s:%d", mxRecords[0].Host, t.Port)
 	}
 
 	conn, err = net.DialTimeout("tcp", address, timeout)
