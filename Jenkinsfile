@@ -1,7 +1,7 @@
 def label = "replicator-${UUID.randomUUID().toString()}"
 podTemplate(label: label, inheritFrom: 'docker') {
     def image="zerospam/check-smtp"
-    def tag = "1.1"
+    def tag = "1.1.1"
     def builtImage = null
 
     node (label) {
