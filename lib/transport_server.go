@@ -13,24 +13,28 @@ type TransportServer struct {
 	TestEmail string `json:"test_email"`
 }
 
-func (t *TransportServer) Address() string {
-	return fmt.Sprintf("%s:%d", t.Server, t.Port)
+func (t *TransportServer) Address() (string, error) {
+
+	if !t.OnMx {
+		return fmt.Sprintf("%s:%d", t.Server, t.Port), nil
+	}
+
+	mxRecords, errorMx := net.LookupMX(t.Server)
+	if errorMx != nil {
+		return "", errorMx
+	}
+	if len(mxRecords) == 0 {
+		return "", fmt.Errorf("MX Records: no mx records found for %s", t.Server)
+	}
+	return fmt.Sprintf("%s:%d", mxRecords[0].Host, t.Port), nil
+
 }
 
 func (t *TransportServer) Connect(timeout time.Duration) (conn net.Conn, err error) {
-	address := t.Address()
-
-	if t.OnMx {
-		mxRecords, errorMx := net.LookupMX(t.Server)
-		if errorMx != nil {
-			return nil, errorMx
-		}
-		if len(mxRecords) == 0 {
-			return nil, fmt.Errorf("MX Records: no mx records found for %s", t.Server)
-		}
-		address = fmt.Sprintf("%s:%d", mxRecords[0].Host, t.Port)
+	address, err := t.Address()
+	if err != nil {
+		return nil, err
 	}
 
-	conn, err = net.DialTimeout("tcp", address, timeout)
-	return conn, err
+	return net.DialTimeout("tcp", address, timeout)
 }

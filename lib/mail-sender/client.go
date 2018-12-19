@@ -54,7 +54,9 @@ func NewClient(server *lib.TransportServer, localName string, connTimeout time.D
 		helloBanner:    banner,
 		tlsMinVersion:  tlsMinVersion,
 		tlsVersionUsed: 0,
-		commandLog:     make(smtp_commands.CommandLog),
+		commandLog: smtp_commands.CommandLog{
+			smtp_commands.Connection: conn.RemoteAddr().String(),
+		},
 	}, nil
 }
 
