@@ -58,7 +58,22 @@ Mini HTTP service that takes a JSON with server information and check
 {
     "success": true,
     "hello_banner": "220 example.com ESMTP Postfix (Debian/GNU)",
-    "tls_version": "VersionTLS12"
+    "tls_version": "VersionTLS12",
+    "general_log": {
+        "1/CONNECTION": "192.168.22.3:25",
+        "2/EHLO": "tardis.example.com",
+        "3/STARTTLS": "VersionTLS12",
+        "4/MAIL FROM": "test@example.com",
+        "5/RCPT TO": "me@example.com",
+        "6/DATA": "\nHello World\nAre you doing well ?\n\nTester",
+        "7/QUIT": ""
+    },
+    "spf_log": {
+        "1/CONNECTION": "192.168.22.3:25",
+        "2/EHLO": "tardis.zerospam.ca",
+        "3/STARTTLS": "",
+        "8/SPF-FAIL": "antoineaf@admincmd.com"
+    }
 }
 ```
 
@@ -71,6 +86,13 @@ Mini HTTP service that takes a JSON with server information and check
     "error_message": {
         "command": "STARTTLS",
         "error_msg": "x509: certificate is valid for example.com, not set.example.com"
+    },
+    "general_log": {
+        "1/CONNECTION": "192.168.22.3:25",
+        "2/EHLO": "tardis.example.com",
+        "3/STARTTLS": ""       
+    },
+    "spf_log": {
     }
 }
 ```
