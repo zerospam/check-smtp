@@ -25,6 +25,7 @@ type Client struct {
 	helloBanner    string
 	tlsMinVersion  uint16
 	tlsVersionUsed uint16
+	commandLog     smtp_commands.CommandLog
 }
 
 type SmtpOperation func() error
@@ -53,11 +54,16 @@ func NewClient(server *lib.TransportServer, localName string, connTimeout time.D
 		helloBanner:    banner,
 		tlsMinVersion:  tlsMinVersion,
 		tlsVersionUsed: 0,
+		commandLog:     make(smtp_commands.CommandLog),
 	}, nil
 }
 
 func (c *Client) GetLastCommand() (*smtp_commands.Commands, *lib.SmtpError) {
 	return c.lastCommand, c.lastError
+}
+
+func (c *Client) GetCommandLog() smtp_commands.CommandLog {
+	return c.commandLog
 }
 
 func (c *Client) GetHelloBanner() (banner string, tlsVersion string) {
@@ -82,13 +88,14 @@ func (c *Client) getClientTLSConfig(commonName string) *tls.Config {
 	return c.tlsGenerator.GetTlsClientConfig(commonName)
 }
 
-func (c *Client) doCommand(command smtp_commands.Commands, optCallback SmtpOperation) {
+func (c *Client) doCommand(command smtp_commands.Commands, optCallback SmtpOperation, argument string) {
 
 	if c.lastError != nil {
 		return
 	}
 
 	c.lastCommand = &command
+	c.commandLog[command] = argument
 	//second parameter to not wait for a receiver.
 	//This happen in the case the timeout returns before the command
 	ch := make(chan error, 1)
@@ -143,18 +150,23 @@ func (c *Client) SendTestEmail(email *test_email.Email) *lib.SmtpError {
 
 	c.doCommand(smtp_commands.Ehlo, func() error {
 		return c.Client.Hello(c.localName)
-	})
+	}, c.localName)
 
 	c.doCommand(smtp_commands.StartTls, func() error {
-		return c.setTls()
-	})
+		result := c.setTls()
+		if c.tlsVersionUsed != 0 {
+			versionUsed, _ := tls_parser.ToString(c.tlsVersionUsed)
+			c.commandLog[smtp_commands.StartTls] = versionUsed
+		}
+		return result
+	}, "")
 
 	c.doCommand(smtp_commands.MailFrom, func() error {
 		return c.Client.Mail(email.From)
-	})
+	}, email.From)
 	c.doCommand(smtp_commands.RcptTo, func() error {
 		return c.Client.Rcpt(c.server.TestEmail)
-	})
+	}, c.server.TestEmail)
 
 	c.doCommand(smtp_commands.Data, func() error {
 		w, err := c.Data()
@@ -173,11 +185,11 @@ func (c *Client) SendTestEmail(email *test_email.Email) *lib.SmtpError {
 		err = w.Close()
 
 		return err
-	})
+	}, email.String())
 
 	c.doCommand(smtp_commands.Quit, func() error {
 		return c.Client.Quit()
-	})
+	}, "")
 
 	return c.lastError
 }
@@ -190,18 +202,18 @@ func (c *Client) SpoofingTest(from string) *lib.SmtpError {
 
 	c.doCommand(smtp_commands.Ehlo, func() error {
 		return c.Client.Hello(c.localName)
-	})
+	}, c.localName)
 
 	c.doCommand(smtp_commands.StartTls, func() error {
 		return c.setTls()
-	})
+	}, "")
 
 	c.doCommand(smtp_commands.SpfFail, func() error {
 		return c.Client.Mail(from)
-	})
+	}, from)
 	c.doCommand(smtp_commands.SpfFail, func() error {
 		return c.Client.Rcpt(c.server.TestEmail)
-	})
+	}, c.server.TestEmail)
 
 	return c.lastError
 }

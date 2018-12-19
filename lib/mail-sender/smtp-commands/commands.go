@@ -13,3 +13,5 @@ const (
 	Quit                = "QUIT"
 	SpfFail             = "SPF-FAIL"
 )
+
+type CommandLog map[Commands]string

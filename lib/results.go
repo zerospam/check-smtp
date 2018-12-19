@@ -11,10 +11,12 @@ type SmtpError struct {
 }
 
 type CheckResult struct {
-	Success     bool       `json:"success"`
-	HelloBanner string     `json:"hello_banner"`
-	TlsVersion  string     `json:"tls_version"`
-	Error       *SmtpError `json:"error_message,omitempty"`
+	Success     bool                     `json:"success"`
+	HelloBanner string                   `json:"hello_banner"`
+	TlsVersion  string                   `json:"tls_version"`
+	Error       *SmtpError               `json:"error_message,omitempty"`
+	GeneralLog  smtp_commands.CommandLog `json:"general_log"`
+	SPFLog      smtp_commands.CommandLog `json:"spf_log"`
 }
 
 func NewSmtpError(Op smtp_commands.Commands, err error) *SmtpError {

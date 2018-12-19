@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/zerospam/check-smtp/lib"
 	"github.com/zerospam/check-smtp/lib/environment-vars"
+	"github.com/zerospam/check-smtp/lib/mail-sender/smtp-commands"
 	"github.com/zerospam/check-smtp/test-email"
 	"log"
 	"net/http"
@@ -19,46 +20,49 @@ func getRequestIp(req *http.Request) string {
 	return req.RemoteAddr
 }
 
-func generateResult(smtpError *lib.SmtpError, banner string, tlsVersion string) lib.CheckResult {
+func generateResult(smtpError *lib.SmtpError, banner string, tlsVersion string, generalLog smtp_commands.CommandLog, spfLog smtp_commands.CommandLog) lib.CheckResult {
 	success := smtpError == nil
 	return lib.CheckResult{
 		Error:       smtpError,
 		Success:     success,
 		TlsVersion:  tlsVersion,
 		HelloBanner: banner,
+		GeneralLog:  generalLog,
+		SPFLog:      spfLog,
 	}
 }
 
 func testServer(server *lib.TransportServer, email *test_email.Email) lib.CheckResult {
 	client, err := environmentvars.GetVars().NewSmtpClient(server)
 	if err != nil {
-		return generateResult(err, "", "")
+		return generateResult(err, "", "", make(smtp_commands.CommandLog), make(smtp_commands.CommandLog))
 	}
 
 	err = client.SendTestEmail(email)
 
 	if err != nil {
 		banner, tlsVersion := client.GetHelloBanner()
-		return generateResult(err, banner, tlsVersion)
+		return generateResult(err, banner, tlsVersion, client.GetCommandLog(), make(smtp_commands.CommandLog))
 	}
 
+	generalLog := client.GetCommandLog()
 	//new client to do the spoofing
 	//Can't reuse previous client as it closed the connection
 	client, err = environmentvars.GetVars().NewSmtpClient(server)
 	if err != nil {
 		banner, tlsVersion := client.GetHelloBanner()
-		return generateResult(err, banner, tlsVersion)
+		return generateResult(err, banner, tlsVersion, generalLog, client.GetCommandLog())
 	}
 
 	err = client.SpoofingTest(environmentvars.GetVars().SmtpMailSpoof.Address)
 
 	if err != nil {
 		banner, tlsVersion := client.GetHelloBanner()
-		return generateResult(err, banner, tlsVersion)
+		return generateResult(err, banner, tlsVersion, generalLog, client.GetCommandLog())
 	}
 
 	banner, tlsVersion := client.GetHelloBanner()
-	return generateResult(err, banner, tlsVersion)
+	return generateResult(err, banner, tlsVersion, generalLog, client.GetCommandLog())
 
 }
 
