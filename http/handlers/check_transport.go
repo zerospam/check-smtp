@@ -57,6 +57,9 @@ func testServer(server *lib.TransportServer, email *test_email.Email) lib.CheckR
 	err = client.SpoofingTest(environmentvars.GetVars().SmtpMailSpoof.Address)
 
 	if err != nil {
+		if err.Command == smtp_commands.RcptTo || err.Command == smtp_commands.MailFrom {
+			err.Command = smtp_commands.SpfFail
+		}
 		banner, tlsVersion := client.GetHelloBanner()
 		return generateResult(err, banner, tlsVersion, generalLog, client.GetCommandLog())
 	}

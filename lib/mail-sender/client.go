@@ -210,10 +210,10 @@ func (c *Client) SpoofingTest(from string) *lib.SmtpError {
 		return c.setTls()
 	}, "")
 
-	c.doCommand(smtp_commands.SpfFail, func() error {
+	c.doCommand(smtp_commands.MailFrom, func() error {
 		return c.Client.Mail(from)
 	}, from)
-	c.doCommand(smtp_commands.SpfFail, func() error {
+	c.doCommand(smtp_commands.RcptTo, func() error {
 		return c.Client.Rcpt(c.server.TestEmail)
 	}, c.server.TestEmail)
 

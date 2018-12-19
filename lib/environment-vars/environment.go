@@ -2,7 +2,6 @@ package environmentvars
 
 import (
 	"crypto/tls"
-	"fmt"
 	"github.com/zerospam/check-smtp/lib"
 	"github.com/zerospam/check-smtp/lib/mail-sender"
 	"github.com/zerospam/check-smtp/lib/tls_parser"
@@ -38,18 +37,6 @@ func GetVars() *Env {
 			commonName = hostname
 		}
 
-		var emailFromAddress *mail.Address
-		emailFrom := os.Getenv("SMTP_FROM")
-
-		if emailFrom == "" {
-			emailFrom = fmt.Sprintf("%s@%s", "local", hostname)
-		}
-
-		emailFromAddress, err = mail.ParseAddress(emailFrom)
-		if err != nil {
-			panic(err)
-		}
-
 		var emailSpoof *mail.Address
 		emailFromSpoof := os.Getenv("SMTP_FROM_SPOOF")
 
@@ -57,7 +44,7 @@ func GetVars() *Env {
 			emailFromSpoof = "spoof@amazon.com"
 		}
 
-		emailSpoof, err = mail.ParseAddress(emailFrom)
+		emailSpoof, err = mail.ParseAddress(emailFromSpoof)
 		if err != nil {
 			panic(err)
 		}
@@ -98,7 +85,6 @@ func GetVars() *Env {
 			ApplicationPort:       port,
 			SharedKey:             os.Getenv("SHARED_KEY"),
 			SmtpCN:                commonName,
-			SmtpMailFrom:          emailFromAddress,
 			SmtpConnectionTimeout: timeoutParsed,
 			SmtpOperationTimeout:  timeoutOptParsed,
 			SmtpMailSpoof:         emailSpoof,
