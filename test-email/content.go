@@ -34,7 +34,7 @@ func (e *Email) PrepareHeaders(localName string) {
 		"From":       fmt.Sprintf("Mail Server Tester <%s>", e.From),
 		"To":         fmt.Sprintf("Mail Server Tester Receiver <%s>", e.To),
 		"Subject":    e.Subject,
-		"Date":       time.Now().Format(time.RFC822Z),
+		"Date":       time.Now().Format(time.RFC1123Z),
 		"Message-Id": fmt.Sprintf("<%s>", e.generateMessageId(localName)),
 
 		"MIME-Version":              "1.0",
