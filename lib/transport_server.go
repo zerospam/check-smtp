@@ -21,7 +21,7 @@ func (t *TransportServer) Address() (string, error) {
 
 	mxRecords, errorMx := net.LookupMX(t.Server)
 	if errorMx != nil {
-		return "", errorMx
+		return "", fmt.Errorf("MX Records: no mx records found for %s\n%s", t.Server, errorMx)
 	}
 	if len(mxRecords) == 0 {
 		return "", fmt.Errorf("MX Records: no mx records found for %s", t.Server)
