@@ -15,6 +15,8 @@ func DecodeString(str string) (uint16, error) {
 		return tls.VersionTLS11, nil
 	case "TLS12":
 		return tls.VersionTLS12, nil
+	case "TLS13":
+		return tls.VersionTLS13, nil
 	default:
 		return 0, fmt.Errorf("%s unrecognized TLS version", str)
 	}
@@ -30,6 +32,8 @@ func ToString(version uint16) (string, error) {
 		return "VersionTLS11", nil
 	case tls.VersionTLS12:
 		return "VersionTLS12", nil
+	case tls.VersionTLS13:
+		return "VersionTLS13", nil
 	default:
 		return "", fmt.Errorf("%x unrecognized TLS version", version)
 	}
