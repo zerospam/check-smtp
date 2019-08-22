@@ -23,6 +23,7 @@ Mini HTTP service that takes a JSON with server information and check
 | TLSv1       | TLS10  |
 | TLSv1.1     | TLS11  |
 | TLS1.2      | TLS12  |
+| TLS1.3      | TLS13  |
 
 ## Data
 ```json
