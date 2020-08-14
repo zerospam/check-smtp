@@ -64,5 +64,7 @@ func (e *Email) String() string {
 	}
 	builder.WriteString("\n")
 	builder.WriteString(e.Body)
-	return builder.String()
+	builder.WriteString("\n")
+
+	return strings.Replace(builder.String(),"\n", "\r\n", -1)
 }
