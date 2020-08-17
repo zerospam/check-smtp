@@ -60,11 +60,12 @@ func (e *Email) String() string {
 	var builder strings.Builder
 	builder.Grow(len(e.Body) + len(e.Headers)*10)
 	for header, value := range e.Headers {
-		builder.WriteString(fmt.Sprintf("%s: %s\n", header, value))
+		builder.WriteString(fmt.Sprintf("%s: %s\r\n", header, value))
 	}
-	builder.WriteString("\n")
+	
+	builder.WriteString("\r\n")
 	builder.WriteString(e.Body)
-	builder.WriteString("\n")
+	replaced = strings.ReplaceAll(builder.String(),"\r\n", "\n")
 
-	return strings.Replace(builder.String(),"\n", "\r\n", -1)
+	return strings.ReplaceAll(replaced, "\n", "\r\n")
 }
